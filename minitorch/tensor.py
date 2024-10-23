@@ -252,7 +252,10 @@ class Tensor:
         assert h.last_fn is not None
         assert h.ctx is not None
 
+        # print(f"{d_output=}")
+
         x = h.last_fn._backward(h.ctx, d_output)
+        # print(f"{x=}")
         assert len(x) == len(h.inputs), f"Bug in function {h.last_fn}"
         return [
             (inp, inp.expand(self._ensure_tensor(d_in)))
@@ -285,3 +288,120 @@ class Tensor:
 
     # Functions
     # TODO: Implement for Task 2.3.
+    @property
+    def size(self) -> int:
+        """Returns
+        size of the tensor
+
+        """
+        return self._tensor.size
+
+    @property
+    def dim(self) -> int:
+        """Returns
+        dim of the tensor
+
+        """
+        return len(self.shape)
+
+    def __add__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, self._ensure_tensor(b))
+
+    def __sub__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
+
+    def __mul__(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self, self._ensure_tensor(b))
+
+    def __lt__(self, b: TensorLike) -> Tensor:
+        return LT.apply(self, self._ensure_tensor(b))
+
+    def __le__(self, b: TensorLike) -> Tensor:
+        return LT.apply(self, self._ensure_tensor(b)) + EQ.apply(
+            self, self._ensure_tensor(b)
+        )
+
+    def __ge__(self, b: TensorLike) -> Tensor:
+        return LT.apply(self._ensure_tensor(b), self) + EQ.apply(
+            self, self._ensure_tensor(b)
+        )
+
+    def __gt__(self, b: TensorLike) -> Tensor:
+        return LT.apply(self._ensure_tensor(b), self)
+
+    def __eq__(self, b: TensorLike) -> Tensor:
+        return EQ.apply(self, self._ensure_tensor(b))
+
+    def __neg__(self) -> Tensor:
+        return Neg.apply(self)
+
+    def __radd__(self, b: TensorLike) -> Tensor:
+        return self + b
+
+    def __rmul__(self, b: TensorLike) -> Tensor:
+        return self * b
+
+    def exp(self) -> Tensor:
+        """Function exp"""
+        return Exp.apply(self)
+
+    def log(self) -> Tensor:
+        """Function log"""
+        return Log.apply(self)
+
+    def sigmoid(self) -> Tensor:
+        """Function sigmoid"""
+        return Sigmoid.apply(self)
+
+    def relu(self) -> Tensor:
+        """Function relu"""
+        return ReLU.apply(self)
+
+    def all(self, dim: Optional[int] = None) -> Tensor:
+        if dim is not None:
+            dim_tensor = Tensor.make([float(dim)], shape=(1,), backend=self.backend)
+            return All.apply(self, dim_tensor)
+        else:
+            tmp = self
+            for d in range(len(self.shape)):
+                tmp = All.apply(
+                    tmp, Tensor.make([float(d)], shape=(1,), backend=self.backend)
+                )
+            return View.apply(tmp, tensor([1]))
+
+    def sum(self, dim: Optional[int] = None) -> Tensor:
+        if dim is not None:
+            dim_tensor = tensor([float(dim)])
+            return Sum.apply(self, dim_tensor)
+        else:
+            return Sum.apply(self.contiguous().view(self.size), tensor(0.0))
+
+    def mean(self, dim: Optional[int] = None) -> Tensor:
+        if dim is not None:
+            dim_tensor = Tensor.make([float(dim)], shape=(1,), backend=self.backend)
+            return Sum.apply(self, dim_tensor) / self.shape[dim]
+        else:
+            return Sum.apply(self.contiguous().view(self.size), tensor(0.0)) / self.size
+
+    def is_close(self, b: TensorLike) -> Tensor:
+        return IsClose.apply(self, self._ensure_tensor(b))
+
+    def view(self, *v_shape: int) -> Tensor:
+        v_shape_tensor = Tensor.make(
+            list(v_shape), (len(v_shape),), backend=self.backend
+        )
+        return View.apply(self, v_shape_tensor)
+
+    def permute(self, *order: int) -> Tensor:
+        order_tensor = Tensor.make(list(order), (len(order),), backend=self.backend)
+        return Permute.apply(self, order_tensor)
+
+    def zero_grad_(self) -> None:
+        self.grad = None
+
+
+if __name__ == "__main__":
+    a = Tensor.make([1.0, 2.0, 3.0], shape=(3,))
+    b = Tensor.make([3.0, 2.0, 1.0], shape=(3,))
+
+    print(a.sum())

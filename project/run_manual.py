@@ -19,7 +19,7 @@ class Network(minitorch.Module):
 
 
 class Linear(minitorch.Module):
-    def __init__(self, in_size, out_size):
+    def __init__(self, in_size: int, out_size: int):
         super().__init__()
         random.seed(100)
         self.weights = []

@@ -2,7 +2,7 @@
 Be sure you have minitorch installed in you Virtual Env.
 >>> pip install -Ue .
 """
-
+import random
 import minitorch
 
 # Use this function to make a random parameter in
@@ -12,6 +12,37 @@ def RParam(*shape):
     return minitorch.Parameter(r)
 
 # TODO: Implement for Task 2.5.
+class Network(minitorch.Module):
+    def __init__(self, hidden_layers):
+        super().__init__()
+        # TODO: Implement for Task 1.5.
+        self.layer1 = Linear(in_size=2, out_size=hidden_layers)
+        self.layer2 = Linear(in_size=hidden_layers, out_size=hidden_layers)
+        self.layer3 = Linear(in_size=hidden_layers, out_size=1)
+
+    def forward(self, x):
+        middle = self.layer1(x).relu()
+        end = self.layer2(middle).relu()
+        return self.layer3.forward(end).sigmoid()
+
+
+class Linear(minitorch.Module):
+    def __init__(self, in_size, out_size):
+        super().__init__()
+        self.in_size = in_size
+        self.out_size = out_size
+        self.weights = RParam(in_size, out_size)
+        self.bias = RParam(out_size)
+
+    def forward(self, inputs):
+        # inputs [bs, d1], w [d1, d2]
+        bs = inputs.shape[0]
+        inputs = inputs.view(bs, self.in_size, 1)   # [bs, d1, 1]
+        output = inputs * self.weights.value              # [bs, d1, d2]
+        output = output.sum(dim=1)                  # [bs, 1, d2]
+        output = output.view(bs, self.out_size)
+        output += self.bias.value
+        return output
 
 def default_log_fn(epoch, total_loss, correct, losses):
     print("Epoch ", epoch, " loss ", total_loss, "correct", correct)

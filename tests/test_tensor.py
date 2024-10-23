@@ -43,6 +43,7 @@ def test_two_args(
     name, base_fn, tensor_fn = fn
     t1, t2 = ts
     t3 = tensor_fn(t1, t2)
+    print(tensor_fn)
     for ind in t3._tensor.indices():
         assert_close(t3[ind], base_fn(t1[ind], t2[ind]))
 
